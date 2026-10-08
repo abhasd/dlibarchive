@@ -91,6 +91,7 @@ static int	file_open(struct archive *, void *);
 static int	file_close(struct archive *, void *);
 static int file_close2(struct archive *, void *);
 static int file_switch(struct archive *, void *, void *);
+static int file_volume_done(struct archive *, void *);
 static ssize_t	file_read(struct archive *, void *, const void **buff);
 static int64_t	file_seek(struct archive *, void *, int64_t request, int);
 static int64_t	file_skip(struct archive *, void *, int64_t request);
@@ -155,6 +156,8 @@ archive_read_open_filenames(struct archive *a, const char **filenames,
 	archive_read_set_close_callback(a, file_close);
 	archive_read_set_switch_callback(a, file_switch);
 	archive_read_set_seek_callback(a, file_seek);
+	/* TODO: Find out if this call only needs to be in this function */
+	archive_read_set_volume_done_callback(a, file_volume_done);
 
 	return (archive_read_open1(a));
 no_memory:
@@ -649,4 +652,18 @@ file_switch(struct archive *a, void *client_data1, void *client_data2)
 {
 	file_close2(a, client_data1);
 	return file_open(a, client_data2);
+}
+
+static int
+file_volume_done(struct archive *a, void *client_data)
+{
+	struct read_file_data *data = (struct read_file_data *)client_data;
+	/* TODO: Unused. Maybe remove the parameter. */
+	(void)a; 
+	if (data && data->filename_type == FNT_MBS && data->filename.m[0] != '\0') {
+		if (unlink(data->filename.m) == 0) {
+			fprintf(stderr, "Deleted volume: %s\n", data->filename.m);
+		}
+	}
+	return ARCHIVE_OK;
 }

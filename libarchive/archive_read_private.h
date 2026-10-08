@@ -135,6 +135,7 @@ struct archive_read_client {
 	archive_seek_callback	*seeker;
 	archive_close_callback	*closer;
 	archive_switch_callback *switcher;
+	archive_volume_done_callback *volume_done;
 	unsigned int nodes;
 	unsigned int cursor;
 	int64_t position;

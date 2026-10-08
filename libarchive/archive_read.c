@@ -182,6 +182,8 @@ client_switch_proxy(struct archive_read_filter *f, unsigned int iindex)
 	struct archive_read *a;
 	int r1 = ARCHIVE_OK, r2 = ARCHIVE_OK;
 	void *data2;
+	void *old_data = NULL;
+	unsigned int old_cursor;
 
 	a = f->archive;
 
@@ -189,6 +191,8 @@ client_switch_proxy(struct archive_read_filter *f, unsigned int iindex)
 	if (a->client.cursor == iindex)
 		return (ARCHIVE_OK);
 
+	old_cursor = a->client.cursor;
+	old_data = f->data;
 	a->client.cursor = iindex;
 	data2 = a->client.dataset[a->client.cursor].data;
 	if (a->client.switcher != NULL)
@@ -209,6 +213,11 @@ client_switch_proxy(struct archive_read_filter *f, unsigned int iindex)
 				((struct archive *)a, f->data);
 	}
 	f->client_total = f->client_avail = 0;
+
+	if (iindex > old_cursor && a->client.volume_done != NULL && old_data != NULL) {
+		(void)a->client.volume_done((struct archive *)a, old_data);
+	}
+
 	return (r1 < r2) ? r1 : r2;
 }
 
@@ -341,6 +350,17 @@ archive_read_set_switch_callback(struct archive *_a,
 	archive_check_magic(_a, ARCHIVE_READ_MAGIC, ARCHIVE_STATE_NEW,
 	    "archive_read_set_switch_callback");
 	a->client.switcher = client_switcher;
+	return ARCHIVE_OK;
+}
+
+int
+archive_read_set_volume_done_callback(struct archive *_a,
+    archive_volume_done_callback *client_volume_done)
+{
+	struct archive_read *a = (struct archive_read *)_a;
+	archive_check_magic(_a, ARCHIVE_READ_MAGIC, ARCHIVE_STATE_NEW,
+	    "archive_read_set_volume_done_callback");
+	a->client.volume_done = client_volume_done;
 	return ARCHIVE_OK;
 }
 

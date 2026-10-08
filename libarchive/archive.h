@@ -298,6 +298,14 @@ typedef int	archive_free_callback(struct archive *, void *_client_data);
 typedef int archive_switch_callback(struct archive *, void *_client_data1,
 			    void *_client_data2);
 
+/* Called when a volume in a multivolume archive is no longer needed.
+ * This allows the application to delete or recycle the volume file.
+ * The callback receives the client_data for the volume that is done.
+ * This is only called when moving forward to a new volume (not when
+ * seeking backward).
+ */
+typedef int archive_volume_done_callback(struct archive *, void *_client_data);
+
 /*
  * Returns a passphrase used for encryption or decryption, NULL on nothing
  * to do and give it up.
@@ -539,6 +547,9 @@ __LA_DECL int archive_read_set_close_callback(struct archive *,
 /* Callback used to switch between one data object to the next */
 __LA_DECL int archive_read_set_switch_callback(struct archive *,
     archive_switch_callback *);
+/* Callback invoked when a volume in a multivolume archive is no longer needed */
+__LA_DECL int archive_read_set_volume_done_callback(struct archive *,
+    archive_volume_done_callback *);
 
 /* This sets the first data object. */
 __LA_DECL int archive_read_set_callback_data(struct archive *, void *);
